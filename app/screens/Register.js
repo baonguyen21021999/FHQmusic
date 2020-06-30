@@ -6,30 +6,67 @@ import { StyleSheet, Text, View, Image,
 
 
 export default class Register extends Component {
+	state = {
+		username: '',
+		password: '',
+		isRegistering: false,
+		confirmedPassword: '',
+		isConfirmedPassword: true,
+		isAvailable: true
+	}
+
+	register = async () => {
+		if (this.state.password !== this.state.confirmedPassword){
+			this.setState({isConfirmedPassword: false, isAvailable: true});
+			return;
+		} else {
+			this.setState({isConfirmedPassword: true, isAvailable: true});
+		}
+		if (this.state.username !== '' && this.state.password !== ''){
+			this.setState({isRegistering: true});
+			const response = await fetch(`https://toeic-test-server.herokuapp.com/music/user/register`,{
+				method: 'POST',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({username: this.state.username, password: this.state.password})
+			});
+			const data = await response.json();
+			if (!data){
+				this.setState({isRegistering: false, isAvailable: false})
+			} else {
+				this.props.navigation.navigate("Login");
+			}
+		}
+	}
+
 	render() {
 		const {navigate} = this.props.navigation;
 		return (
 			<SafeAreaView style={styles.container}>
-				<StatusBar barStyle="light-content"/>
+				<StatusBar barStyle="default" translucent/>
 				<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
 					<View style={styles.container}>
 						<View style={styles.top}>
 							<Text style={styles.title}>FHQ Music</Text>
-							<Text>Free and High Quality</Text>
+							<Text style={{color: "white"}}>Free and High Quality</Text>
 						</View>
 
 						<View style={styles.mid}>
-                            <View>
+                            <View style={{paddingBottom: 5}}>
                                 <Text style={styles.buttonText}>Đăng ký tài khoản</Text>
                             </View>
-
+							{this.state.isAvailable? null : <Text style={{fontSize: 15, color: 'red'}}>Tài khoản đã được sử dụng</Text>}
+							{this.state.isConfirmedPassword? null : <Text style={{fontSize: 15, color: 'red'}}>Mật khẩu phải trùng nhau</Text>}
 							<View style={styles.infoContainer}>
 								<TextInput 
 									style={styles.input}
-									placeholder="Username/Email"
+									placeholder="Tên đăng nhập"
 									placeholderTextColor='rgba(0,0,0,0.8)'
 									textContentType='emailAddress'
 									keyboardType='email-address'
+									onChangeText={text => this.setState({username: text})}
 									returnKeyType='next'
 									onSubmitEditing={()=> this.refs.txtPassword.focus()}>
 								</TextInput>
@@ -38,11 +75,12 @@ export default class Register extends Component {
 							<View style={styles.infoContainer}>
 								<TextInput 
 									style={styles.input}
-									placeholder="Password"
+									placeholder="Mật khẩu"
 									placeholderTextColor='rgba(0,0,0,0.8)'
 									returnKeyType='next'
 									secureTextEntry={true}
 									ref={"txtPassword"}
+									onChangeText={text => this.setState({password: text})}
                                     onSubmitEditing={()=> this.refs.txtPasswordAgain.focus()}>
 								</TextInput>
 							</View>
@@ -50,16 +88,17 @@ export default class Register extends Component {
                             <View style={styles.infoContainer}>
 								<TextInput 
 									style={styles.input}
-									placeholder="Password again"
+									placeholder="Nhập lại mật khẩu"
 									placeholderTextColor='rgba(0,0,0,0.8)'
+									onChangeText={text => this.setState({confirmedPassword: text})}
 									returnKeyType='go'
 									secureTextEntry={true}
 									ref={"txtPasswordAgain"}>
 								</TextInput>
 							</View>
 
-							<TouchableOpacity style={styles.buttonContainer}>
-								<Text style={styles.buttonText}>Đăng Ký</Text>
+							<TouchableOpacity disabled={this.state.isRegistering} style={styles.buttonContainer} onPress={() => this.register()}>
+								<Text style={styles.buttonText}>{this.state.isRegistering ? "Xin chờ" : "Đăng ký"}</Text>
 							</TouchableOpacity>
 							
 						</View>
@@ -81,7 +120,7 @@ const styles = StyleSheet.create({
 		flexDirection: 'column',
 		justifyContent: 'center',
 		alignItems: 'stretch',
-		backgroundColor: 'rgb(243,195,176)'		
+		backgroundColor: '#4899ea'		
 	},
 	top: {
 		flex: 3,
@@ -103,7 +142,7 @@ const styles = StyleSheet.create({
 		alignItems: 'center'
 	},
 	title: {
-		color: 'black',
+		color: 'white',
 		fontSize: 36,
 		textAlign: 'center',
 		paddingTop: 80,
@@ -111,8 +150,8 @@ const styles = StyleSheet.create({
 	infoContainer: {
 		paddingHorizontal: 10,
 		borderRadius: 10,
-		marginTop: 20,
-		backgroundColor: 'rgba(255,255,255,0.4)'//a = alpha = opacity
+		marginTop: 10,
+		backgroundColor: 'white'//a = alpha = opacity
 	},
 	input: {
 		width: 280,
@@ -126,12 +165,12 @@ const styles = StyleSheet.create({
 		borderRadius:6,
 		justifyContent:'center',
 		alignItems: 'center',
-		marginTop: 20,
+		marginTop: 35,
 
 	},
 	buttonText: {
 		textAlign: 'center',
-		color: 'rgb(32, 53, 70)',
+		color: 'white',
 		fontWeight: 'bold',
 		fontSize: 18,
 	},
@@ -146,7 +185,8 @@ const styles = StyleSheet.create({
 		margin: 8,
 	},
 	textbot: {
-		margin:80,
+		color: "white",
+		marginTop: 65,
 	}
 
 	

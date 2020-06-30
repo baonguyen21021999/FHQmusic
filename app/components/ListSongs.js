@@ -1,61 +1,24 @@
 import React from 'react';
-import { FlatList, View, Text, Image, TouchableOpacity } from 'react-native';
-import  * as Animatable from 'react-native-animatable';
+import { FlatList, View, Text, Image, TouchableOpacity, AsyncStorage } from 'react-native';
 import styles from './ComponentStyles/ListSongs';
-import {
-  Menu,
-  MenuOptions,
-  MenuOption,
-  MenuTrigger,
-} from 'react-native-popup-menu';
+import SongOption from './SongOption';
 import { Icon } from 'react-native-elements';
-import { device } from '../config/ScreenDimensions'
+import { device } from '../config/ScreenDimensions';
+import { setUser } from '../actions/index';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 
-const songs = [
-  {
-    id: 0,
-    picture: 'https://i.ytimg.com/vi/HPL74s4VPdk/maxresdefault.jpg',
-    name: 'Anh thanh niên',
-    singer: 'HuyR',
-    favorite: 0,
-    latestListening: 1587917439178,
-  },
-  { 
-    id: 1,
-    picture: 'https://i.ytimg.com/vi/EWz4fITO5qg/maxresdefault.jpg',
-    name: 'Vì yêu cứ đâm đầu',
-    singer: 'MIN x ĐEN x JUSTATEE',
-    favorite: 1,
-    latestListening: 1587267045840,
-  },
-  {
-    id: 2,
-    picture: 'https://i.ytimg.com/vi/t0WFOnwp3MM/maxresdefault.jpg',
-    name: 'Mặt trời của em ',
-    singer: 'Phương Ly',
-    favorite: 0,
-    latestListening: 1587917439178,
-  },
-  {
-    id: 3,
-    picture: 'https://i.ytimg.com/vi/KhTCatAKVpk/maxresdefault.jpg',
-    name: 'Đã lỡ yêu em nhiều',
-    singer: 'JustaTee',
-    favorite: 1,
-    latestListening: 1587756992587,
-  },
-]
-
-export default class ListSongs extends React.Component {
+class ListSongs extends React.Component {
   state = {
-    dayOffset: ''
+    dayOffset: '',
+    playlist: []
   }
 
   getDayOffset = time => {
     const timeOffset = ((Date.now()) - time)/1000;
     if (timeOffset < 86400) {
       return 'Hôm nay';
-    } else if (timeOffset < 172.800){
+    } else if (timeOffset < 172800){
       return 'Hôm qua';
     } else if (timeOffset < 259200){
       return 'Hôm kia';
@@ -66,8 +29,30 @@ export default class ListSongs extends React.Component {
     } else return new Date(time).toLocaleString();
   }
 
-  playSong = id => {
-    
+  playSong = async index => {
+    this.props.navigate("Player", {songPos: index, playlist: this.state.playlist});
+    const userId = await AsyncStorage.getItem('user');
+    if (userId){
+      const response = await fetch(`https://toeic-test-server.herokuapp.com/music/user/add-history`,{
+				method: 'PUT',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({userId: userId, songId: this.props.data[index]._id})
+      });
+      const updatedUser = await response.json();
+      this.props.setUser(updatedUser);
+    } else {
+      fetch(`https://toeic-test-server.herokuapp.com/music//song/view/anonymous`,{
+				method: 'PUT',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({songId: this.props.data[index]._id})
+      });
+    }
   }
   
   renderItem = ({item, index}) => {
@@ -78,7 +63,7 @@ export default class ListSongs extends React.Component {
       this.state.dayOffset = itemDayOffset;
     }
     return(
-      <Animatable.View animation="zoomInLeft" delay={750} duration={2000}>
+      <View>
         {showDayOffset ?
         <View style={styles.dayOffsetContainer}>
           <Text style={styles.dayOffset}>{itemDayOffset}</Text>
@@ -87,7 +72,7 @@ export default class ListSongs extends React.Component {
         <TouchableOpacity
           activeOpacity={0.5}
           onPress={() => {
-            this.playSong(item.id);
+            this.playSong(index);
             item.latestListening = new Date().getTime();
             this.setState({dayOffset: ''});
           }}  
@@ -99,7 +84,7 @@ export default class ListSongs extends React.Component {
               <Text style={styles.songName}>{item.name}</Text>
             </View>
             <View style={styles.singerContainer}>
-              <Text style={styles.singer}>{item.singer}</Text>
+              <Text style={styles.singer}>{item.singer.name}</Text>
             </View>
             {this.props.type==='favorite' ? 
             <View style={styles.favoriteIcon}>
@@ -108,45 +93,33 @@ export default class ListSongs extends React.Component {
             null}
           </View>  
           <View style={styles.optionIcon}>
-            <Menu>
-              <MenuTrigger>
-                <Icon name="more-vert" size={device.width*0.08} />
-              </MenuTrigger>
-              <MenuOptions optionsContainerStyle={{width: 100}}>
-                <MenuOption onSelect={() => alert(`Tùy chọn 1`)} >
-                  <Text>Tùy chọn 1</Text>
-                </MenuOption>
-                <MenuOption onSelect={() => alert(`Tùy chọn 2`)} >
-                  <Text>Tùy chọn 2</Text>
-                </MenuOption>
-                <MenuOption onSelect={() => alert(`Tùy chọn 3`)} >
-                  <Text>Tùy chọn 3</Text>
-                </MenuOption>
-              </MenuOptions>
-            </Menu>
+            <SongOption song={item}/>
           </View>
         </View>
         </TouchableOpacity>
-      </Animatable.View>
+      </View>
     );
   }
 
   render(){
-    let data
-    if (this.props.type === 'songs'){
-      data = songs.sort((a, b) => {
-        let nameA = a.name.toUpperCase();
-        let nameB = b.name.toUpperCase();
-        return nameA.localeCompare(nameB);
-      });
-    } else if (this.props.type === 'favorite') {
-      data = songs.filter(item => item.favorite==1)
-    } else if (this.props.type === 'history') {
-      data = songs.sort((a, b) => b.latestListening - a.latestListening);
+    this.state.dayOffset = '';
+    if (this.props.type === 'history'){
+      this.state.playlist = this.props.data.map(item => ({
+        _id: item._id._id,
+        name: item._id.name,
+        picture: item._id.picture,
+        singer: item._id.singer,
+        topic: item._id.topic,
+        uri: item._id.uri,
+        view: item._id.view,
+        latestListening: item.latestListening
+      }))
+    }else{
+      this.state.playlist = this.props.data
     }
     return (
       <FlatList
-        data={data}
+        data={this.state.playlist}
         keyExtractor={(item, index) => index.toString()}
         renderItem={this.renderItem}
         style={styles.flatList}
@@ -154,3 +127,13 @@ export default class ListSongs extends React.Component {
     )
   }
 }
+
+const mapStateToProps = state => ({
+  user: state.user,
+});
+
+const mapDispatchToProps = (dispatch) => ({
+  setUser: bindActionCreators(setUser, dispatch)
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(ListSongs);

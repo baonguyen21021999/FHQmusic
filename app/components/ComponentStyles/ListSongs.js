@@ -3,26 +3,28 @@ import {device} from '../../config/ScreenDimensions';
 
 export default StyleSheet.create({
   flatList:{
-    paddingTop: device.height*0.015
+    // paddingTop: device.height*0.01,
+    // paddingBottom: device.height*0.01
   },
   container:{
     backgroundColor: '#fff',
     flexDirection: 'row',
-    marginBottom: device.height*0.015,
+    marginBottom: device.height*0.01,
     marginHorizontal: device.width*0.02,
     borderRadius: 5,
     shadowColor: "#000000",
-    shadowOpacity: 0.8,
+    shadowOpacity: 0.6,
     shadowOffset: {
-      height: 1,
-      width: 1
+      height: 0.5,
+      width: 0.5
     }
   },
   image:{
     width: device.width*0.2, 
     height: device.width*0.2,
     marginVertical: device.width*0.03,
-    marginHorizontal: device.width*0.03
+    marginHorizontal: device.width*0.03,
+    borderRadius: 5
   },
   songInfoContainer: {
     marginTop: device.width*0.03,
@@ -38,7 +40,7 @@ export default StyleSheet.create({
     fontSize: device.width*0.05
   },
   singer: {
-
+    color: 'gray'
   },
   dayOffsetContainer: {
     marginHorizontal: device.width*0.02,
@@ -66,5 +68,9 @@ export default StyleSheet.create({
     marginTop: device.width*0.01,
     height: device.width*0.08,
     width: device.width*0.08,
+  },
+  menuOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
   }
 });
